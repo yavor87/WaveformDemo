@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="waveform_static">#33b5e5</color>
+    <color name="waveform_realtime">#80FFC0</color>
+    <color name="playback_indicator">#ffff66</color>
+    <color name="timecode">#ddffffdd</color>
+</resources>
