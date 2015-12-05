@@ -5,6 +5,7 @@
     </declare-styleable>
 
     <declare-styleable name="StaticWaveformView">
+        <attr name="waveformFillColor" format="color" />
         <attr name="playbackIndicatorColor" format="color" />
         <attr name="timecodeColor" format="color" />
     </declare-styleable>

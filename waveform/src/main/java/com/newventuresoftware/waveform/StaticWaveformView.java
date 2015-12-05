@@ -19,11 +19,14 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Picture;
 import android.graphics.PorterDuff;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
+
+import java.util.Arrays;
 
 public class StaticWaveformView extends WaveformView implements SurfaceHolder.Callback, PlaybackListener {
     public StaticWaveformView(Context context) {
@@ -43,6 +46,12 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
         mHolder = this.getHolder();
         mHolder.addCallback(this);
 
+        mFillPaint = new Paint();
+        mFillPaint.setStyle(Paint.Style.FILL);
+        mFillPaint.setAntiAlias(true);
+        mFillPaint.setColor(array.getColor(R.styleable.StaticWaveformView_waveformFillColor,
+                ContextCompat.getColor(context, R.color.default_waveformFill)));
+
         mMarkerPaint = new Paint();
         mMarkerPaint.setStyle(Paint.Style.STROKE);
         mMarkerPaint.setStrokeWidth(0);
@@ -60,7 +69,7 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
     private short[] mAudioData;
     private SurfaceHolder mHolder;
     private int mAudioLength, mAudioProgress;
-    private Paint mMarkerPaint, mTimecodePaint;
+    private Paint mFillPaint, mMarkerPaint, mTimecodePaint;
     private Picture mCache;
 
     /**
@@ -127,12 +136,39 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
         // Clear the screen each time because SurfaceView won't do this for us.
         cacheCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-        float[] mWaveformPoints = getWaveform(width, height, mAudioData);
-        cacheCanvas.drawLines(mWaveformPoints, getStrokePaint());
+        Path mWaveform = getWaveform(width, height, mAudioData);
+        cacheCanvas.drawPath(mWaveform, mFillPaint);
+        getStrokePaint().setStrokeWidth(3);
+        cacheCanvas.drawPath(mWaveform, getStrokePaint());
         drawAxis(cacheCanvas, width);
 
         cache.endRecording();
         return cache;
+    }
+
+    Path getWaveform(int width, int height, short[] buffer) {
+        Path waveformPath = new Path();
+        float centerY = height / 2f;
+        int pointIndex = 0;
+        float max = Short.MAX_VALUE;
+
+        short[][] extremes = getExtremes(buffer, width);
+
+        // draw maximums
+        for (int x = 0; x < width; x++) {
+            short sample = extremes[x][0];
+            float y = centerY - ((sample / max) * centerY);
+            waveformPath.lineTo(x, y);
+        }
+
+        // draw minimums
+        for (int x = width - 1; x >= 0; x--) {
+            short sample = extremes[x][1];
+            float y = centerY - ((sample / max) * centerY);
+            waveformPath.lineTo(x, y);
+        }
+
+        return waveformPath;
     }
 
     private void drawMarker(Canvas canvas) {
@@ -155,6 +191,26 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
         for (float i = 0; i <= seconds; i += secondStep) {
             canvas.drawText(String.format("%.2f", i), i * xStep, textHeight, mTimecodePaint);
         }
+    }
+
+    short[][] getExtremes(short[] data, int size) {
+        short[][] newData = new short[size][];
+        int groupSize = data.length / size;
+
+        for (int i = 0; i < size; i++) {
+            short[] group = Arrays.copyOfRange(data, i * groupSize,
+                    Math.min((i + 1) * groupSize, data.length));
+
+            // Fin min & max values
+            short min = Short.MAX_VALUE, max = Short.MIN_VALUE;
+            for (short a : group) {
+                min = (short) Math.min(min, a);
+                max = (short) Math.max(max, a);
+            }
+            newData[i] = new short[] { max, min };
+        }
+
+        return newData;
     }
 
     @Override

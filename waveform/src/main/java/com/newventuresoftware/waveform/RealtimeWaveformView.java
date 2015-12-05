@@ -108,6 +108,35 @@ public class RealtimeWaveformView extends WaveformView implements AudioDataRecei
         }
     }
 
+    float[] getWaveform(int width, int height, short[] buffer) {
+        float[] waveformPoints = new float[width * 4];
+        float centerY = height / 2f;
+        float lastX = -1;
+        float lastY = -1;
+        int pointIndex = 0;
+        float max = Short.MAX_VALUE;
+
+        // For efficiency, we don't draw all of the samples in the buffer, but only the ones
+        // that align with pixel boundaries.
+        for (int x = 0; x < width; x++) {
+            int index = (int) (((x * 1.0f) / width) * buffer.length);
+            short sample = buffer[index];
+            float y = centerY - ((sample / max) * centerY);
+
+            if (lastX != -1) {
+                waveformPoints[pointIndex++] = lastX;
+                waveformPoints[pointIndex++] = lastY;
+                waveformPoints[pointIndex++] = x;
+                waveformPoints[pointIndex++] = y;
+            }
+
+            lastX = x;
+            lastY = y;
+        }
+
+        return waveformPoints;
+    }
+
     @Override
     public void onAudioDataReceived(short[] data) {
         updateAudioData(data);
