@@ -8,7 +8,7 @@ import android.graphics.Picture;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 
-public class StaticWaveformView extends WaveformView implements SurfaceHolder.Callback {
+public class StaticWaveformView extends WaveformView implements SurfaceHolder.Callback, PlaybackListener {
     public StaticWaveformView(Context context) {
         this(context, null, 0);
     }
@@ -61,10 +61,13 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
         mAudioLength = length;
     }
 
-    /**
-     * Indicates that playback is complete
-     */
-    public void setAudioComplete() {
+    @Override
+    public void onProgress(int progress) {
+        setAudioProgress(progress);
+    }
+
+    @Override
+    public void onCompletion() {
         setAudioProgress(mAudioLength);
     }
 

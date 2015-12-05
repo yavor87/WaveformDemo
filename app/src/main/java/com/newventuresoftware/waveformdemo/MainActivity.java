@@ -50,16 +50,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        mPlaybackThread = new PlaybackThread(samples, new PlaybackThread.PlaybackListener() {
-            @Override
-            public void onProgress(int progress) {
-                mPlaybackView.setAudioProgress(progress);
-            }
-            @Override
-            public void onCompletion() {
-                mPlaybackView.setAudioComplete();
-            }
-        });
+        mPlaybackThread = new PlaybackThread(samples, mPlaybackView);
         mPlaybackView.updateAudioData(samples);
         mPlaybackView.setAudioLength(AudioUtils.calculateAudioLength(samples.length,
                 PlaybackThread.SAMPLE_RATE, PlaybackThread.CHANNELS));

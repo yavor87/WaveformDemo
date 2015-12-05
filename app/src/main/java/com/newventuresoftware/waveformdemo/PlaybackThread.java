@@ -7,6 +7,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.newventuresoftware.waveform.PlaybackListener;
+
 import java.nio.ShortBuffer;
 
 public class PlaybackThread {
@@ -132,10 +134,5 @@ public class PlaybackThread {
         }
 
         Log.v(LOG_TAG, "Audio streaming finished. Samples written: " + totalWritten);
-    }
-
-    public interface PlaybackListener {
-        void onProgress(int progress);
-        void onCompletion();
     }
 }
