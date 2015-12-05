@@ -13,12 +13,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.newventuresoftware.waveform.RealtimeWaveformView;
+import com.newventuresoftware.waveform.StaticWaveformView;
+
+import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 
 public class MainActivity extends AppCompatActivity {
 
     private RealtimeWaveformView mRealtimeWaveformView;
+    private StaticWaveformView mPlaybackView;
     private RecordingThread mRecordingThread;
-    private boolean mIsRecording;
+    private PlaybackThread mPlaybackThread;
     private static final int REQUEST_RECORD_AUDIO = 13;
 
     @Override
@@ -29,18 +39,82 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         mRealtimeWaveformView = (RealtimeWaveformView) findViewById(R.id.waveformView);
+        mRecordingThread = new RecordingThread(mRealtimeWaveformView);
+
+        mPlaybackView = (StaticWaveformView) findViewById(R.id.playbackWaveformView);
+
+        short[] samples = null;
+        try {
+            samples = getAudioSample();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        mPlaybackThread = new PlaybackThread(samples, new PlaybackThread.PlaybackListener() {
+            @Override
+            public void onProgress(int progress) {
+                mPlaybackView.setAudioProgress(progress);
+            }
+            @Override
+            public void onCompletion() {
+                mPlaybackView.setAudioComplete();
+            }
+        });
+        mPlaybackView.updateAudioData(samples);
+        mPlaybackView.setAudioLength(AudioUtils.calculateAudioLength(samples.length,
+                PlaybackThread.SAMPLE_RATE, PlaybackThread.CHANNELS));
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!mIsRecording) {
+                if (!mRecordingThread.recording()) {
                     startAudioRecordingSafe();
                 } else {
-                    stopAudioRecording();
+                    mRecordingThread.stopRecording();
                 }
             }
         });
+
+        final FloatingActionButton playFab = (FloatingActionButton) findViewById(R.id.playFab);
+        playFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mPlaybackThread.playing()) {
+                    mPlaybackThread.startPlayback();
+                    playFab.setImageResource(android.R.drawable.ic_media_pause);
+                } else {
+                    mPlaybackThread.stopPlayback();
+                    playFab.setImageResource(android.R.drawable.ic_media_play);
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        mRecordingThread.stopRecording();
+        mPlaybackThread.stopPlayback();
+        mPlaybackThread.release();
+    }
+
+    private short[] getAudioSample() throws IOException{
+        InputStream is = getResources().openRawResource(R.raw.jinglebells);
+        byte[] data;
+        try {
+            data = IOUtils.toByteArray(is);
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+        }
+
+        ShortBuffer sb = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+        short[] samples = new short[sb.limit()];
+        sb.get(samples);
+        return samples;
     }
 
     @Override
@@ -68,28 +142,10 @@ public class MainActivity extends AppCompatActivity {
     private void startAudioRecordingSafe() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED) {
-            startAudioRecording();
+            mRecordingThread.startRecording();
         } else {
             requestMicrophonePermission();
         }
-    }
-
-    private void startAudioRecording() {
-        if (mRecordingThread != null)
-            return;
-
-        mRecordingThread = new RecordingThread(mRealtimeWaveformView);
-        new Thread(mRecordingThread).start();
-        mIsRecording = true;
-    }
-
-    private void stopAudioRecording() {
-        if (mRecordingThread == null)
-            return;
-
-        mRecordingThread.stop();
-        mRecordingThread = null;
-        mIsRecording = false;
     }
 
     private void requestMicrophonePermission() {
@@ -113,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == REQUEST_RECORD_AUDIO && grantResults.length > 0 &&
                 grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startAudioRecording();
+            mRecordingThread.stopRecording();
         }
     }
 }

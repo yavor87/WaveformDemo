@@ -34,6 +34,10 @@ public class RealtimeWaveformView extends WaveformView implements AudioDataRecei
     private long lastUpdate;
     private boolean mIsUpdating = false;
 
+    /**
+     * Sets the audio samples buffer
+     * @param buffer audio samples
+     */
     @Override
     public void updateAudioData(short[] buffer) {
         if (System.nanoTime() - lastUpdate < UPDATE_INTERVAL || mIsUpdating)

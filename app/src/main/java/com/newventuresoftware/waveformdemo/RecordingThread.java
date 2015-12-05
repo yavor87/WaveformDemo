@@ -7,10 +7,7 @@ import android.util.Log;
 
 import com.newventuresoftware.waveform.AudioDataReceivedListener;
 
-/**
- * Created by Yavor on 26.11.2015 г..
- */
-public class RecordingThread implements Runnable {
+public class RecordingThread {
     private static final String LOG_TAG = RecordingThread.class.getSimpleName();
     private static final int SAMPLE_RATE = 44100;
 
@@ -20,11 +17,35 @@ public class RecordingThread implements Runnable {
 
     private boolean mShouldContinue;
     private AudioDataReceivedListener mListener;
+    private Thread mThread;
 
-    @Override
-    public void run() {
+    public boolean recording() {
+        return mThread != null;
+    }
+
+    public void startRecording() {
+        if (mThread != null)
+            return;
+
         mShouldContinue = true;
+        mThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                record();
+            }
+        });
+        mThread.start();
+    }
 
+    public void stopRecording() {
+        if (mThread == null)
+            return;
+
+        mShouldContinue = false;
+        mThread = null;
+    }
+
+    private void record() {
         Log.v(LOG_TAG, "Start");
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
@@ -66,9 +87,5 @@ public class RecordingThread implements Runnable {
         record.release();
 
         Log.v(LOG_TAG, String.format("Recording stopped. Samples read: %d", shortsRead));
-    }
-
-    public void stop() {
-        mShouldContinue = false;
     }
 }

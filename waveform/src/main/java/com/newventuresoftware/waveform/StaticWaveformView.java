@@ -37,23 +37,42 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
     }
 
     private short[] mAudioData;
-    private float[] mWaveformPoints;
     private SurfaceHolder mHolder;
     private int mAudioLength, mAudioProgress;
     private Paint mMarkerPaint, mTimecodePaint;
     private Picture mCache;
 
+    /**
+     * Sets the audio samples buffer
+     * @param buffer audio samples
+     */
     @Override
     public synchronized void updateAudioData(short[] buffer) {
         mAudioData = buffer;
+        mAudioLength = buffer.length;
         updateDisplay(mHolder);
     }
 
+    /**
+     * Sets the audio file length
+     * @param length Audio file length in milliseconds
+     */
     public void setAudioLength(int length) {
         mAudioLength = length;
     }
 
-    public void updateAudioProgress(int progress) {
+    /**
+     * Indicates that playback is complete
+     */
+    public void setAudioComplete() {
+        setAudioProgress(mAudioLength);
+    }
+
+    /**
+     * Updates audio playback progress
+     * @param progress in milliseconds
+     */
+    public void setAudioProgress(int progress) {
         mAudioProgress = progress;
         Canvas canvas = mHolder.lockCanvas();
         if (canvas != null) {
@@ -84,7 +103,7 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
         // Clear the screen each time because SurfaceView won't do this for us.
         cacheCanvas.drawColor(Color.BLACK);
 
-        mWaveformPoints = getWaveform(width, height, mAudioData);
+        float[] mWaveformPoints = getWaveform(width, height, mAudioData);
         cacheCanvas.drawLines(mWaveformPoints, getStrokePaint());
         drawAxis(cacheCanvas, width);
 
