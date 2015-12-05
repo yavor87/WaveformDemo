@@ -2,6 +2,7 @@ package com.newventuresoftware.waveformdemo;
 
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -26,7 +27,6 @@ import java.nio.ShortBuffer;
 public class MainActivity extends AppCompatActivity {
 
     private RealtimeWaveformView mRealtimeWaveformView;
-    private StaticWaveformView mPlaybackView;
     private RecordingThread mRecordingThread;
     private PlaybackThread mPlaybackThread;
     private static final int REQUEST_RECORD_AUDIO = 13;
@@ -41,19 +41,7 @@ public class MainActivity extends AppCompatActivity {
         mRealtimeWaveformView = (RealtimeWaveformView) findViewById(R.id.waveformView);
         mRecordingThread = new RecordingThread(mRealtimeWaveformView);
 
-        mPlaybackView = (StaticWaveformView) findViewById(R.id.playbackWaveformView);
-
-        short[] samples = null;
-        try {
-            samples = getAudioSample();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        mPlaybackThread = new PlaybackThread(samples, mPlaybackView);
-        mPlaybackView.updateAudioData(samples);
-        mPlaybackView.setAudioLength(AudioUtils.calculateAudioLength(samples.length,
-                PlaybackThread.SAMPLE_RATE, PlaybackThread.CHANNELS));
+        StaticWaveformView mPlaybackView = (StaticWaveformView) findViewById(R.id.playbackWaveformView);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -67,19 +55,33 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final FloatingActionButton playFab = (FloatingActionButton) findViewById(R.id.playFab);
-        playFab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mPlaybackThread.playing()) {
-                    mPlaybackThread.startPlayback();
-                    playFab.setImageResource(android.R.drawable.ic_media_pause);
-                } else {
-                    mPlaybackThread.stopPlayback();
-                    playFab.setImageResource(android.R.drawable.ic_media_play);
+        short[] samples = null;
+        try {
+            samples = getAudioSample();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (samples != null) {
+            mPlaybackThread = new PlaybackThread(samples, mPlaybackView);
+            mPlaybackView.updateAudioData(samples);
+            mPlaybackView.setAudioLength(AudioUtils.calculateAudioLength(samples.length,
+                    PlaybackThread.SAMPLE_RATE, PlaybackThread.CHANNELS));
+
+            final FloatingActionButton playFab = (FloatingActionButton) findViewById(R.id.playFab);
+            playFab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (!mPlaybackThread.playing()) {
+                        mPlaybackThread.startPlayback();
+                        playFab.setImageResource(android.R.drawable.ic_media_pause);
+                    } else {
+                        mPlaybackThread.stopPlayback();
+                        playFab.setImageResource(android.R.drawable.ic_media_play);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override
@@ -157,7 +159,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         if (requestCode == REQUEST_RECORD_AUDIO && grantResults.length > 0 &&
                 grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             mRecordingThread.stopRecording();
