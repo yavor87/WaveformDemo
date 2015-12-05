@@ -18,6 +18,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 
 import java.util.LinkedList;
@@ -33,8 +34,6 @@ public class RealtimeWaveformView extends WaveformView implements AudioDataRecei
 
     public RealtimeWaveformView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-
-        getStrokePaint().setColor(getResources().getColor(R.color.waveform_realtime));
 
         mWaveformData = new LinkedList<>();
     }
@@ -91,7 +90,7 @@ public class RealtimeWaveformView extends WaveformView implements AudioDataRecei
      */
     private void drawWaveform(Canvas canvas) {
         // Clear the screen each time because SurfaceView won't do this for us.
-        canvas.drawColor(Color.BLACK);
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         // We draw the history from oldest to newest so that the older audio data is further back
         // and darker than the most recent data.

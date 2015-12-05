@@ -15,7 +15,9 @@
 package com.newventuresoftware.waveform;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Paint;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.SurfaceView;
 
@@ -31,7 +33,12 @@ public abstract class WaveformView extends SurfaceView {
     public WaveformView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
+        TypedArray array = context.getTheme().obtainStyledAttributes(attrs, R.styleable.WaveformView,
+                0, 0);
+
         mStrokePaint = new Paint();
+        mStrokePaint.setColor(array.getColor(R.styleable.WaveformView_waveformColor,
+                ContextCompat.getColor(context, R.color.default_waveform)));
         mStrokePaint.setStyle(Paint.Style.STROKE);
         mStrokePaint.setStrokeWidth(0);
         mStrokePaint.setAntiAlias(true);

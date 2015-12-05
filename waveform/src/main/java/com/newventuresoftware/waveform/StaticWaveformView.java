@@ -15,10 +15,13 @@
 package com.newventuresoftware.waveform;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Picture;
+import android.graphics.PorterDuff;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 
@@ -34,20 +37,24 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
     public StaticWaveformView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
+        TypedArray array = context.getTheme().obtainStyledAttributes(attrs,
+                R.styleable.StaticWaveformView, 0, 0);
+
         mHolder = this.getHolder();
         mHolder.addCallback(this);
-        getStrokePaint().setColor(getResources().getColor(R.color.waveform_static));
 
         mMarkerPaint = new Paint();
         mMarkerPaint.setStyle(Paint.Style.STROKE);
         mMarkerPaint.setStrokeWidth(0);
         mMarkerPaint.setAntiAlias(true);
-        mMarkerPaint.setColor(getResources().getColor(R.color.playback_indicator));
+        mMarkerPaint.setColor(array.getColor(R.styleable.StaticWaveformView_playbackIndicatorColor,
+                ContextCompat.getColor(context, R.color.default_playback_indicator)));
 
         mTimecodePaint = new Paint();
         mTimecodePaint.setTextSize(getResources().getDimension(R.dimen.timecode_text_size));
         mTimecodePaint.setAntiAlias(true);
-        mTimecodePaint.setColor(getResources().getColor(R.color.timecode));
+        mTimecodePaint.setColor(array.getColor(R.styleable.StaticWaveformView_timecodeColor,
+                ContextCompat.getColor(context, R.color.default_timecode)));
     }
 
     private short[] mAudioData;
@@ -118,7 +125,7 @@ public class StaticWaveformView extends WaveformView implements SurfaceHolder.Ca
         Canvas cacheCanvas = cache.beginRecording(width, height);
 
         // Clear the screen each time because SurfaceView won't do this for us.
-        cacheCanvas.drawColor(Color.BLACK);
+        cacheCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         float[] mWaveformPoints = getWaveform(width, height, mAudioData);
         cacheCanvas.drawLines(mWaveformPoints, getStrokePaint());
