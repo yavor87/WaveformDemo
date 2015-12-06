@@ -12,8 +12,9 @@
  * the License.
  */
 
-package com.newventuresoftware.waveform;
+package com.newventuresoftware.waveformdemo;
 
-public interface AudioDataReceivedListener {
-    void onAudioDataReceived(short[] data);
+public interface PlaybackListener {
+    void onProgress(int progress);
+    void onCompletion();
 }

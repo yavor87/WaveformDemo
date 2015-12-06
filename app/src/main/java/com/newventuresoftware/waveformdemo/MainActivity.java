@@ -27,8 +27,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.newventuresoftware.waveform.RealtimeWaveformView;
-import com.newventuresoftware.waveform.StaticWaveformView;
+import com.newventuresoftware.waveform.WaveformView;
 
 import org.apache.commons.io.IOUtils;
 
@@ -40,7 +39,7 @@ import java.nio.ShortBuffer;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RealtimeWaveformView mRealtimeWaveformView;
+    private WaveformView mRealtimeWaveformView;
     private RecordingThread mRecordingThread;
     private PlaybackThread mPlaybackThread;
     private static final int REQUEST_RECORD_AUDIO = 13;
@@ -52,10 +51,15 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mRealtimeWaveformView = (RealtimeWaveformView) findViewById(R.id.waveformView);
-        mRecordingThread = new RecordingThread(mRealtimeWaveformView);
+        mRealtimeWaveformView = (WaveformView) findViewById(R.id.waveformView);
+        mRecordingThread = new RecordingThread(new AudioDataReceivedListener() {
+            @Override
+            public void onAudioDataReceived(short[] data) {
+                mRealtimeWaveformView.setSamples(data);
+            }
+        });
 
-        StaticWaveformView mPlaybackView = (StaticWaveformView) findViewById(R.id.playbackWaveformView);
+        final WaveformView mPlaybackView = (WaveformView) findViewById(R.id.playbackWaveformView);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -77,10 +81,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (samples != null) {
-            mPlaybackThread = new PlaybackThread(samples, mPlaybackView);
-            mPlaybackView.updateAudioData(samples);
-            mPlaybackView.setAudioLength(AudioUtils.calculateAudioLength(samples.length,
-                    PlaybackThread.SAMPLE_RATE, PlaybackThread.CHANNELS));
+            mPlaybackThread = new PlaybackThread(samples, new PlaybackListener() {
+                @Override
+                public void onProgress(int progress) {
+                    mPlaybackView.setMarkerPosition(progress);
+                }
+                @Override
+                public void onCompletion() {
+                    mPlaybackView.setMarkerPosition(mPlaybackView.getAudioLength());
+                }
+            });
+            mPlaybackView.setChannels(PlaybackThread.CHANNELS);
+            mPlaybackView.setSampleRate(PlaybackThread.SAMPLE_RATE);
+            mPlaybackView.setSamples(samples);
 
             final FloatingActionButton playFab = (FloatingActionButton) findViewById(R.id.playFab);
             playFab.setOnClickListener(new View.OnClickListener() {

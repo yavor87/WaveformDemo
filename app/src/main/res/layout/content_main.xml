@@ -13,17 +13,18 @@
     tools:context="com.newventuresoftware.waveformdemo.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <com.newventuresoftware.waveform.RealtimeWaveformView
+    <com.newventuresoftware.waveform.WaveformView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        app:mode="RECORDING"
         android:id="@+id/waveformView" />
 
-    <com.newventuresoftware.waveform.StaticWaveformView
+    <com.newventuresoftware.waveform.WaveformView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingTop="20dp" android:paddingBottom="20dp"
-        app:waveformColor="#33b5e5"
+        app:mode="PLAYBACK"
         android:id="@+id/playbackWaveformView" />
+    <!--app:waveformColor="#33b5e5"-->
 </LinearLayout>
