@@ -2,12 +2,13 @@ package com.newventuresoftware.waveform;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Picture;
-import android.graphics.PorterDuff;
+import android.graphics.Rect;
+import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.text.TextPaint;
 import android.util.AttributeSet;
@@ -31,6 +32,7 @@ public class WaveformView extends View {
 
     // Used in draw
     private int brightness;
+    private Rect drawRect;
 
     private int width, height;
     private float xStep, centerY;
@@ -38,6 +40,7 @@ public class WaveformView extends View {
     private short[] mSamples;
     private LinkedList<float[]> mHistoricalData;
     private Picture mCachedWaveform;
+    private Bitmap mCachedWaveformBitmap;
     private int colorDelta = 255 / (HISTORY_SIZE + 1);
 
     public WaveformView(Context context) {
@@ -104,6 +107,8 @@ public class WaveformView extends View {
         height = getMeasuredHeight();
         xStep = width / (mAudioLength * 1.0f);
         centerY = height / 2f;
+        drawRect = new Rect(0, 0, width, height);
+
         if (mHistoricalData != null) {
             mHistoricalData.clear();
         }
@@ -124,8 +129,12 @@ public class WaveformView extends View {
                 canvas.drawLines(p, mStrokePaint);
                 brightness += colorDelta;
             }
-        } else if (mMode == MODE_PLAYBACK && mCachedWaveform != null) {
-            canvas.drawPicture(mCachedWaveform);
+        } else if (mMode == MODE_PLAYBACK) {
+            if (mCachedWaveform != null) {
+                canvas.drawPicture(mCachedWaveform);
+            } else if (mCachedWaveformBitmap != null) {
+                canvas.drawBitmap(mCachedWaveformBitmap, null, drawRect, null);
+            }
             if (mMarkerPosition > -1 && mMarkerPosition < mAudioLength)
                 canvas.drawLine(xStep * mMarkerPosition, 0, xStep * mMarkerPosition, height, mMarkerPaint);
         }
@@ -192,6 +201,8 @@ public class WaveformView extends View {
             if (mHistoricalData == null)
                 mHistoricalData = new LinkedList<>();
             LinkedList<float[]> temp = new LinkedList<>(mHistoricalData);
+
+            // For efficiency, we are reusing the array of points.
             float[] waveformPoints;
             if (temp.size() == HISTORY_SIZE) {
                 waveformPoints = temp.removeFirst();
@@ -264,15 +275,22 @@ public class WaveformView extends View {
         if (width <= 0 || height <= 0 || mSamples == null)
             return;
 
-        mCachedWaveform = new Picture();
-        Canvas cacheCanvas = mCachedWaveform.beginRecording(width, height);
+        Canvas cacheCanvas;
+        if (Build.VERSION.SDK_INT >= 23 && isHardwareAccelerated()) {
+            mCachedWaveform = new Picture();
+            cacheCanvas = mCachedWaveform.beginRecording(width, height);
+        } else {
+            mCachedWaveformBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            cacheCanvas = new Canvas(mCachedWaveformBitmap);
+        }
 
         Path mWaveform = drawPlaybackWaveform(width, height, mSamples);
         cacheCanvas.drawPath(mWaveform, mFillPaint);
         cacheCanvas.drawPath(mWaveform, mStrokePaint);
         drawAxis(cacheCanvas, width);
 
-        mCachedWaveform.endRecording();
+        if (mCachedWaveform != null)
+            mCachedWaveform.endRecording();
     }
 
     private void drawAxis(Canvas canvas, int width) {
