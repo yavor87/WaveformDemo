@@ -192,10 +192,15 @@ public class WaveformView extends View {
             if (mHistoricalData == null)
                 mHistoricalData = new LinkedList<>();
             LinkedList<float[]> temp = new LinkedList<>(mHistoricalData);
-            if (temp.size() == HISTORY_SIZE)
-                temp.removeFirst();
+            float[] waveformPoints;
+            if (temp.size() == HISTORY_SIZE) {
+                waveformPoints = temp.removeFirst();
+            } else {
+                waveformPoints = new float[width * 4];
+            }
 
-            temp.addLast(drawRecordingWaveform(mSamples));
+            drawRecordingWaveform(mSamples, waveformPoints);
+            temp.addLast(waveformPoints);
             mHistoricalData = temp;
             postInvalidate();
         } else if (mMode == MODE_PLAYBACK) {
@@ -204,8 +209,7 @@ public class WaveformView extends View {
         }
     }
 
-    float[] drawRecordingWaveform(short[] buffer) {
-        float[] waveformPoints = new float[width * 4];
+    void drawRecordingWaveform(short[] buffer, float[] waveformPoints) {
         float lastX = -1;
         float lastY = -1;
         int pointIndex = 0;
@@ -228,8 +232,6 @@ public class WaveformView extends View {
             lastX = x;
             lastY = y;
         }
-
-        return waveformPoints;
     }
 
     Path drawPlaybackWaveform(int width, int height, short[] buffer) {
