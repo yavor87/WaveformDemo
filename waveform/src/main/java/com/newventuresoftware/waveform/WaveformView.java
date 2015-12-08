@@ -98,8 +98,8 @@ public class WaveformView extends View {
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
 
         width = getMeasuredWidth();
         height = getMeasuredHeight();
@@ -107,14 +107,14 @@ public class WaveformView extends View {
         centerY = height / 2f;
         if (mMode == MODE_RECORDING) {
             waveformPoints = new float[width * 4];
+        } else if (mMode == MODE_PLAYBACK) {
+            createPlaybackWaveform();
         }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
-        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         if (mMode == MODE_RECORDING && mHistoricalData != null) {
             for (short[] p : mHistoricalData) {
@@ -151,6 +151,7 @@ public class WaveformView extends View {
 
     public void setMarkerPosition(int markerPosition) {
         mMarkerPosition = markerPosition;
+        postInvalidate();
     }
 
     public int getAudioLength() {
@@ -192,6 +193,7 @@ public class WaveformView extends View {
             mHistoricalData.addLast(mSamples);
         } else if (mMode == MODE_PLAYBACK) {
             mMarkerPosition = -1;
+            createPlaybackWaveform();
         }
     }
 
@@ -244,20 +246,19 @@ public class WaveformView extends View {
         return waveformPath;
     }
 
-    private Picture createWaveform() {
-        Picture cache = new Picture();
-        Canvas cacheCanvas = cache.beginRecording(width, height);
+    private void createPlaybackWaveform() {
+        if (width <= 0 || height <= 0 || mSamples == null)
+            return;
 
-        // Clear the screen each time because SurfaceView won't do this for us.
-        cacheCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        mCachedWaveform = new Picture();
+        Canvas cacheCanvas = mCachedWaveform.beginRecording(width, height);
 
         Path mWaveform = drawPlaybackWaveform(width, height, mSamples);
         cacheCanvas.drawPath(mWaveform, mFillPaint);
         cacheCanvas.drawPath(mWaveform, mStrokePaint);
         drawAxis(cacheCanvas, width);
 
-        cache.endRecording();
-        return cache;
+        mCachedWaveform.endRecording();
     }
 
     private void drawAxis(Canvas canvas, int width) {
