@@ -30,15 +30,13 @@ public class WaveformView extends View {
     private Paint mStrokePaint, mFillPaint, mMarkerPaint;
 
     // Used in draw
-    private int width, height;
-    private float xStep, centerY, x, y, lastX, lastY;
-    private short sample;
-    private int pointIndex, brightness;
-    private float[] waveformPoints;
+    private int brightness;
 
+    private int width, height;
+    private float xStep, centerY;
     private int mMode, mAudioLength, mMarkerPosition, mSampleRate, mChannels;
     private short[] mSamples;
-    private LinkedList<short[]> mHistoricalData;
+    private LinkedList<float[]> mHistoricalData;
     private Picture mCachedWaveform;
     private int colorDelta = 255 / (HISTORY_SIZE + 1);
 
@@ -106,9 +104,10 @@ public class WaveformView extends View {
         height = getMeasuredHeight();
         xStep = width / (mAudioLength * 1.0f);
         centerY = height / 2f;
-        if (mMode == MODE_RECORDING) {
-            waveformPoints = new float[width * 4];
-        } else if (mMode == MODE_PLAYBACK) {
+        if (mHistoricalData != null) {
+            mHistoricalData.clear();
+        }
+        if (mMode == MODE_PLAYBACK) {
             createPlaybackWaveform();
         }
     }
@@ -117,11 +116,12 @@ public class WaveformView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        if (mMode == MODE_RECORDING && mHistoricalData != null) {
+        LinkedList<float[]> temp = mHistoricalData;
+        if (mMode == MODE_RECORDING && temp != null) {
             brightness = colorDelta;
-            for (short[] p : mHistoricalData) {
+            for (float[] p : temp) {
                 mStrokePaint.setAlpha(brightness);
-                canvas.drawLines(drawRecordingWaveform(p), mStrokePaint);
+                canvas.drawLines(p, mStrokePaint);
                 brightness += colorDelta;
             }
         } else if (mMode == MODE_PLAYBACK && mCachedWaveform != null) {
@@ -191,11 +191,11 @@ public class WaveformView extends View {
         if (mMode == MODE_RECORDING) {
             if (mHistoricalData == null)
                 mHistoricalData = new LinkedList<>();
-            LinkedList<short[]> temp = new LinkedList<>(mHistoricalData);
+            LinkedList<float[]> temp = new LinkedList<>(mHistoricalData);
             if (temp.size() == HISTORY_SIZE)
                 temp.removeFirst();
 
-            temp.addLast(mSamples);
+            temp.addLast(drawRecordingWaveform(mSamples));
             mHistoricalData = temp;
             postInvalidate();
         } else if (mMode == MODE_PLAYBACK) {
@@ -205,15 +205,18 @@ public class WaveformView extends View {
     }
 
     float[] drawRecordingWaveform(short[] buffer) {
-        lastX = -1;
-        lastY = -1;
-        pointIndex = 0;
+        float[] waveformPoints = new float[width * 4];
+        float lastX = -1;
+        float lastY = -1;
+        int pointIndex = 0;
+        float max = Short.MAX_VALUE;
 
         // For efficiency, we don't draw all of the samples in the buffer, but only the ones
         // that align with pixel boundaries.
-        for (x = 0; x < width; x++) {
-            sample = buffer[(int) ((x / width) * buffer.length)];
-            y = centerY - ((sample / Short.MAX_VALUE) * centerY);
+        for (int x = 0; x < width; x++) {
+            int index = (int) (((x * 1.0f) / width) * buffer.length);
+            short sample = buffer[index];
+            float y = centerY - ((sample / max) * centerY);
 
             if (lastX != -1) {
                 waveformPoints[pointIndex++] = lastX;
@@ -249,6 +252,8 @@ public class WaveformView extends View {
             float y = centerY - ((sample / max) * centerY);
             waveformPath.lineTo(x, y);
         }
+
+        waveformPath.close();
 
         return waveformPath;
     }
