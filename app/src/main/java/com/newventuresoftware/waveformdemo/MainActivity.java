@@ -81,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (samples != null) {
+            final FloatingActionButton playFab = (FloatingActionButton) findViewById(R.id.playFab);
+
             mPlaybackThread = new PlaybackThread(samples, new PlaybackListener() {
                 @Override
                 public void onProgress(int progress) {
@@ -89,13 +91,13 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onCompletion() {
                     mPlaybackView.setMarkerPosition(mPlaybackView.getAudioLength());
+                    playFab.setImageResource(android.R.drawable.ic_media_play);
                 }
             });
             mPlaybackView.setChannels(PlaybackThread.CHANNELS);
             mPlaybackView.setSampleRate(PlaybackThread.SAMPLE_RATE);
             mPlaybackView.setSamples(samples);
 
-            final FloatingActionButton playFab = (FloatingActionButton) findViewById(R.id.playFab);
             playFab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
