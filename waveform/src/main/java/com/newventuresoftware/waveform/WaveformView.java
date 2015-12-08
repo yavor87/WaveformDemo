@@ -33,13 +33,14 @@ public class WaveformView extends View {
     private int width, height;
     private float xStep, centerY, x, y, lastX, lastY;
     private short sample;
-    private int pointIndex;
+    private int pointIndex, brightness;
     private float[] waveformPoints;
 
     private int mMode, mAudioLength, mMarkerPosition, mSampleRate, mChannels;
     private short[] mSamples;
     private LinkedList<short[]> mHistoricalData;
     private Picture mCachedWaveform;
+    private int colorDelta = 255 / (HISTORY_SIZE + 1);
 
     public WaveformView(Context context) {
         super(context);
@@ -117,8 +118,11 @@ public class WaveformView extends View {
         super.onDraw(canvas);
 
         if (mMode == MODE_RECORDING && mHistoricalData != null) {
+            brightness = colorDelta;
             for (short[] p : mHistoricalData) {
+                mStrokePaint.setAlpha(brightness);
                 canvas.drawLines(drawRecordingWaveform(p), mStrokePaint);
+                brightness += colorDelta;
             }
         } else if (mMode == MODE_PLAYBACK && mCachedWaveform != null) {
             canvas.drawPicture(mCachedWaveform);
@@ -187,10 +191,13 @@ public class WaveformView extends View {
         if (mMode == MODE_RECORDING) {
             if (mHistoricalData == null)
                 mHistoricalData = new LinkedList<>();
-            if (mHistoricalData.size() == HISTORY_SIZE)
-                mHistoricalData.removeFirst();
+            LinkedList<short[]> temp = new LinkedList<>(mHistoricalData);
+            if (temp.size() == HISTORY_SIZE)
+                temp.removeFirst();
 
-            mHistoricalData.addLast(mSamples);
+            temp.addLast(mSamples);
+            mHistoricalData = temp;
+            postInvalidate();
         } else if (mMode == MODE_PLAYBACK) {
             mMarkerPosition = -1;
             createPlaybackWaveform();
