@@ -18,6 +18,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         app:mode="RECORDING"
+        android:background="#000000"
         android:id="@+id/waveformView" />
 
     <com.newventuresoftware.waveform.WaveformView
@@ -25,6 +26,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         app:mode="PLAYBACK"
+        app:waveformColor="#33b5e5"
+        android:background="#000000"
         android:id="@+id/playbackWaveformView" />
-    <!--app:waveformColor="#33b5e5"-->
 </LinearLayout>
