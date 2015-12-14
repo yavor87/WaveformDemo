@@ -65,6 +65,7 @@ public class WaveformView extends View {
 
         mMode = a.getInt(R.styleable.WaveformView_mode, MODE_PLAYBACK);
 
+        float strokeThickness = a.getFloat(R.styleable.WaveformView_waveformStrokeThickness, 1f);
         int mStrokeColor = a.getColor(R.styleable.WaveformView_waveformColor,
                 ContextCompat.getColor(context, R.color.default_waveform));
         int mFillColor = a.getColor(R.styleable.WaveformView_waveformFillColor,
@@ -84,7 +85,7 @@ public class WaveformView extends View {
         mStrokePaint = new Paint();
         mStrokePaint.setColor(mStrokeColor);
         mStrokePaint.setStyle(Paint.Style.STROKE);
-        mStrokePaint.setStrokeWidth(1);
+        mStrokePaint.setStrokeWidth(strokeThickness);
         mStrokePaint.setAntiAlias(true);
 
         mFillPaint = new Paint();
