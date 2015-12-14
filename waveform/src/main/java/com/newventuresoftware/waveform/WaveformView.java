@@ -80,7 +80,9 @@ public class WaveformView extends View {
         mTextPaint = new TextPaint();
         mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
-        mTextPaint.setColor(mTextColor);
+                mTextPaint.setColor(mTextColor);
+        mTextPaint.setTextSize(TextUtils.getFontSize(getContext(),
+                android.R.attr.textAppearanceSmall));
 
         mStrokePaint = new Paint();
         mStrokePaint.setColor(mStrokeColor);
