@@ -85,7 +85,7 @@ public class PlaybackThread {
     }
 
     public void startPlayback() {
-        if (mThread != null)
+        if (mThread != null || mAudioTrack.getState() != AudioTrack.STATE_INITIALIZED)
             return;
 
         mAudioTrack.flush();
